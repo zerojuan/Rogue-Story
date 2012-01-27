@@ -25,11 +25,11 @@
     <?php } ?>
     <p>
       <pre>
-        <?php print_r($content); ?>
+        <canvas id="canvas_rpg" width="800px" height="600px"></canvas> 
       </pre>
     </p>
 
   </body>
-  <script src='js/lib/jaws-min.js'/>
-  <script src='js/script.js'/>
+  <script src='js/lib/jaws-min.js'></script>
+  <script src='js/script.js'></script>
 </html>
