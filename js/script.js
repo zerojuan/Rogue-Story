@@ -60,8 +60,8 @@ function PlayState(){
 		env_sheet = new jaws.SpriteSheet({frame_size:[tile_width, tile_width], image:"images/lofi_environment.png", orientation:"right"});
 			
 		//initialize tile map
-		viewport = new jaws.Viewport({max_x: 2000, 
-																	max_y: 2000, 
+		viewport = new jaws.Viewport({ 
+																	 
 																	x: 0, y: 0});
 
 		tile_map = new jaws.TileMap({cell_size: [tile_width, tile_width], size: [dungeon_width * tile_width, dungeon_height * tile_width]});
@@ -158,7 +158,7 @@ function PlayState(){
 						valid_tile = SOUTH;
 						mod_x = 0;
 						mod_y = 1;	
-					}else if((new_x + 1) > dungeon_width &&
+					}else if((new_x + 1) < dungeon_width &&
 						(tile_data[new_x+1][new_y].value == FLOOR || tile_data[new_x+1][new_y].value == CORRIDOR)){
 						valid_tile = WEST;
 						mod_x = -1;
@@ -210,7 +210,6 @@ function PlayState(){
 		for(var i = 0; i < dungeon_width; i++){
 			for(var i2 = 0; i2 < dungeon_height; i2++){
 				if(tile_data[i][i2].isVisible){
-					console.log("Hello you guys!");
 					var sprite = new jaws.Sprite({x:i*tile_width, y:i2*tile_width, anchor:"top_left"});
 					sprite.setImage(env_sheet.frames[tile_data[i][i2].value]);
 					tile_map.push( sprite );
@@ -246,16 +245,18 @@ function PlayState(){
 					}
 				}
 				room.top = y - room_height;
-				room.left = Math.round(x-room_width/2)+1;
+				room.left = Math.round(x-room_width/2);
 				room.width = room_width;
 				room.height = room_height;
-				for(temp_y = y; temp_y > room.top; temp_y--){
-					for(temp_x = room.left; temp_x < (x + (room_width+1)/2); temp_x++){
-						if(temp_x == room.left) tile_data[temp_x][temp_y].value = WALL;
-						else if(temp_x == Math.round(x + (room_width+1)/2)) tile_data[temp_x][temp_y].value = WALL;
-						else if(temp_y == y) tile_data[temp_x][temp_y].value = WALL;
-						else if(temp_y == Math.round(y - room_height+1)) tile_data[temp_x][temp_y].value = WALL;
-						else	tile_data[temp_x][temp_y].value = FLOOR;
+				for (temp_y = y; temp_y > (y-room_height); temp_y--){
+					for (temp_x = Math.round(x-room_width/2); temp_x < (x+(room_width+1)/2); temp_x++){
+						//start with the walls
+						if (temp_x == Math.round(x-room_width/2)) tile_data[temp_x][temp_y].value = WALL;
+						else if (temp_x == Math.round(x+(room_width-1)/2)) tile_data[temp_x][temp_y].value = WALL;
+						else if (temp_y == y) tile_data[temp_x][temp_y].value = WALL;
+						else if (temp_y == Math.round(y-room_height+1)) tile_data[temp_x][temp_y].value = WALL;
+						//and then fill with the floor
+						else tile_data[temp_x][temp_y].value = FLOOR;
 					}
 				}
 				break;
@@ -268,15 +269,17 @@ function PlayState(){
 					}
 				}
 				room.top = y;
-				room.left = Math.round(x-room_width/2)+1;
+				room.left = Math.round(x-room_width/2);
 				room.width = room_width;
 				room.height = room_height;
-				for(temp_y = y; temp_y < (y+room_height); temp_y++){
-					for(temp_x = room.left; temp_x < (x+(room_width+1)/2); temp_x++){
-						if(temp_x == room.left) tile_data[temp_x][temp_y].value = WALL;
-						else if(temp_x == Math.round(x + room_width+1/2)) tile_data[temp_x][temp_y].value = WALL;
-						else if(temp_y == y) tile_data[temp_x][temp_y].value = WALL;
-						else if(temp_y == (y+room_height-1)) tile_data[temp_x][temp_y].value = WALL;
+				for (temp_y = y; temp_y < (y+room_height); temp_y++){
+					for (temp_x = Math.round(x-room_width/2); temp_x < (x+(room_width+1)/2); temp_x++){
+								//start with the walls
+						if (temp_x == Math.round(x-room_width/2)) tile_data[temp_x][temp_y].value = WALL;
+						else if (temp_x == Math.round(x+(room_width-1)/2)) tile_data[temp_x][temp_y].value = WALL;
+						else if (temp_y == y) tile_data[temp_x][temp_y].value = WALL;
+						else if (temp_y == (y+room_height-1)) tile_data[temp_x][temp_y].value = WALL;
+								//and then fill with the floor
 						else tile_data[temp_x][temp_y].value = FLOOR;
 					}
 				}
@@ -289,16 +292,18 @@ function PlayState(){
 						if(tile_data[temp_x][temp_y].value != EARTH) return false;
 					}
 				}
-				room.top = Math.round(y-room_height/2)+1;
+				room.top = Math.round(y-room_height/2);
 				room.left = x;
 				room.width = room_width;
 				room.height = room_height;
-				for(temp_y = room.top; temp_y < (y - (room_height+1)/2); temp_y++){
-					for(temp_x = x; temp_x < (x+room_width); temp_x++){
-						if(temp_x == room.left) tile_data[temp_x][temp_y].value = WALL;
-						else if(temp_x == (x+room_width-1)) tile_data[temp_x][temp_y].value = WALL;
-						else if(temp_y == room.top) tile_data[temp_x][temp_y].value = WALL;
-						else if(temp_y == Math.round(y+(room_height-1)/2)) tile_data[temp_x][temp_y].value = WALL;
+				for (temp_y = Math.round(y-room_height/2); temp_y < (y+(room_height+1)/2); temp_y++){
+					for (temp_x = x; temp_x < (x+room_width); temp_x++){
+			 
+						if (temp_x == x) tile_data[temp_x][temp_y].value = WALL;
+						else if (temp_x == (x+room_width-1)) tile_data[temp_x][temp_y].value = WALL;
+						else if (temp_y == Math.round(y-room_height/2)) tile_data[temp_x][temp_y].value = WALL;
+						else if (temp_y == Math.round(y+(room_height-1)/2)) tile_data[temp_x][temp_y].value = WALL;
+			 
 						else tile_data[temp_x][temp_y].value = FLOOR;
 					}
 				}
@@ -311,15 +316,17 @@ function PlayState(){
 						if(tile_data[temp_x][temp_y].value != EARTH) return false;
 					}
 				}
-				room.top = Math.round(y-room_height/2)+1;
+				room.top = Math.round(y-room_height/2);
 				room.left = x-room_width;
 				room.width = room_width;
 				room.height = room_height;
-				for(temp_y = room.top; temp_y < (y - (room_height+1)/2); temp_y++){
-					for(temp_x = x; temp_x > room.left; temp_x++){
-						if(temp_x == x) tile_data[temp_x][temp_y].value = WALL;
-						else if(temp_x == (x-room_width+1)) tile_data[temp_x][temp_y].value = WALL;
-						else if(temp_y == room.top) tile_data[temp_x][temp_y].value = WALL;
+				for (temp_y = Math.round(y-room_height/2); temp_y < (y+(room_height+1)/2); temp_y++){
+					for (temp_x = x; temp_x > (x-room_width); temp_x--){
+						if (temp_x == x) tile_data[temp_x][temp_y].value = WALL;
+						else if (temp_x == (x-room_width+1)) tile_data[temp_x][temp_y].value = WALL;
+						else if (temp_y == Math.round(y-room_height/2)) tile_data[temp_x][temp_y].value = WALL;
+						else if (temp_y == Math.round(y+(room_height-1)/2)) tile_data[temp_x][temp_y].value = WALL;
+			 
 						else tile_data[temp_x][temp_y].value = FLOOR;
 					}
 				}
@@ -347,11 +354,11 @@ function PlayState(){
 					if(temp_y < 0 || temp_y >= dungeon_height) return false;
 					if(tile_data[temp_x][temp_y].value != EARTH) return false;
 				}
-				corridor.top = y-length+1;
+				corridor.top = y-length;
 				corridor.left = x;
 				corridor.width = 1;
 				corridor.height = length;
-				for(temp_y = corridor.top; temp_y < y; temp_y++){
+				for(temp_y = y; temp_y > (y - length); temp_y--){
 					tile_data[temp_x][temp_y].value = CORRIDOR;
 				}
 				break;
@@ -367,7 +374,7 @@ function PlayState(){
 				corridor.left = x;
 				corridor.width = 1;
 				corridor.height = length;
-				for(temp_y = corridor.top; temp_y < (y+length); temp_y++){
+				for(temp_y = y; temp_y < (y + length); temp_y++){
 					tile_data[temp_x][temp_y].value = CORRIDOR;
 				}
 				break;
@@ -383,7 +390,7 @@ function PlayState(){
 				corridor.left = x;
 				corridor.width = length;
 				corridor.height = 1;
-				for(temp_x = x; temp_x < (x+length); temp_x++){
+				for(temp_x = x; temp_x < (x + length); temp_x++){
 					tile_data[temp_x][temp_y].value = CORRIDOR;
 				}
 				break;
@@ -396,10 +403,10 @@ function PlayState(){
 					if(tile_data[temp_x][temp_y].value != EARTH) return false;
 				}
 				corridor.top = y;
-				corridor.left = x - length+1;
+				corridor.left = x - length;
 				corridor.width = length;
 				corridor.height = 1;
-				for(temp_x = x; temp_x > (x-length); temp_x--){
+				for(temp_x = x; temp_x > (x - length); temp_x--){
 					tile_data[temp_x][temp_y].value = CORRIDOR;
 				}
 				break;
