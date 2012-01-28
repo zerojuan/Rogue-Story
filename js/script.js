@@ -203,15 +203,19 @@ function PlayState(){
 				}
 			}	
 		}
-		
+		console.log("Features before trim: " + dungeon_features.length);
 		//remove awkward corridors
 		for(var i in dungeon_features){
 			if(dungeon_features[i].type=='corridor'){
 				//trim this corridor
 				var corridor = dungeon_features[i];
-				validateCorridor(corridor);
+				if(!validateCorridor(corridor)){
+					delete dungeon_features[i];
+				}				
 			}
 		}
+		
+		dungeon_features = dungeon_features.filter(function(){return true});
 		
 		console.log("Done");
 		return {x: Math.round(initial_room.left + initial_room.width/2),
@@ -436,26 +440,22 @@ function PlayState(){
 		var start_y = corridor.top;
 		var end_x = corridor.left + corridor.width;
 		var end_y = corridor.top + corridor.height;
-		console.log("Start: " + start_x + "," + start_y + " : End: " + end_x + ", " + end_y + " Facing: " + corridor.facing);
+		//console.log("Start: " + start_x + "," + start_y + " : End: " + end_x + ", " + end_y + " Facing: " + corridor.facing);
 		//console.log("Neighbor: " + getNumInValidNeighbors(start_x,start_y) + " : " + getNumInValidNeighbors(end_x, end_y));
 		if(getNumInValidNeighbors(start_x, start_y) == 3 || getNumInValidNeighbors(end_x, end_y) == 3){
-			//remove me!
-			console.log("REMOVE ME");
-			var doorRemoved = false;
+			//console.log("REMOVE ME");
 			for(var x = start_x; x <= end_x; x++){
 				for(var y = start_y; y <= end_y; y++){
 					if(tile_data[x][y].value == CORRIDOR)
 						tile_data[x][y].value = EARTH;
 					else if(tile_data[x][y].value == DOOR){
 						tile_data[x][y].value = WALL;
-						doorRemoved = true;
 					}						
 				}
 			}
-			if(!doorRemoved)
-				console.log("Door has not been removed! " + corridor.facing);
+			return false;
 		}
-		
+		return true;
 	}
 	
 	var getNumInValidNeighbors = function(x,y){
