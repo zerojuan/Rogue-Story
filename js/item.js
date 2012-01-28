@@ -3,5 +3,5 @@
  */
 
 function Item(){
-	this.
+	this.name;
 }
