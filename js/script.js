@@ -67,6 +67,7 @@ function PlayState(){
 		//generate map
 		player_coord = generateMap();
 	
+		console.log("Total Dungeon Features: " + dungeon_features.length);
 		renderMap();
 		
 		//initialize player sprite position
@@ -118,6 +119,8 @@ function PlayState(){
 		
 		//DIG OUT A SINGLE ROOM IN THE CENTER
 		initial_room = makeRoom(Math.round(dungeon_width/2), Math.round(dungeon_height/2), 8, 8, parseInt(Math.random() * 3));
+		
+		dungeon_features.push(initial_room);
 		
 		//count how many features to add
 		var current_features = 0;
@@ -187,17 +190,29 @@ function PlayState(){
 					if(room != false){
 						current_features++; //add to quota
 						tile_data[new_x][new_y].value = DOOR; //mark the wall opening with a door
-						tile_data[new_x+mod_x][new_y+mod_y].value = FLOOR; //clean up in front of a door so it's reachable 
+						tile_data[new_x+mod_x][new_y+mod_y].value = FLOOR; //clean up in front of a door so it's reachable
+						dungeon_features.push(room); 
 					}
 				}else if(feature >= 25){
 					var corridor = makeCorridor((new_x+mod_x), (new_y+mod_y), 6, valid_tile);
 					if(corridor != false){
 						current_features++;
 						tile_data[new_x][new_y].value = DOOR;
+						dungeon_features.push(corridor);
 					}	
 				}
 			}	
 		}
+		
+		//remove awkward corridors
+		for(var i in dungeon_features){
+			if(dungeon_features[i].type=='corridor'){
+				//trim this corridor
+				var corridor = dungeon_features[i];
+				validateCorridor(corridor);
+			}
+		}
+		
 		console.log("Done");
 		return {x: Math.round(initial_room.left + initial_room.width/2),
 					  y: Math.round(initial_room.top + initial_room.height/2)}
@@ -352,10 +367,11 @@ function PlayState(){
 					if(temp_y < 0 || temp_y >= dungeon_height) return false;
 					if(tile_data[temp_x][temp_y].value != EARTH) return false;
 				}
-				corridor.top = y-length;
+				corridor.top = y-length+1;
 				corridor.left = x;
-				corridor.width = 1;
+				corridor.width = 0;
 				corridor.height = length;
+				corridor.facing = 'NORTH';
 				for(temp_y = y; temp_y > (y - length); temp_y--){
 					tile_data[temp_x][temp_y].value = CORRIDOR;
 				}
@@ -368,10 +384,11 @@ function PlayState(){
 					if(temp_y < 0 || temp_y >= dungeon_height) return false;
 					if(tile_data[temp_x][temp_y].value != EARTH) return false;
 				}
-				corridor.top = y;
+				corridor.top = y-1;
 				corridor.left = x;
-				corridor.width = 1;
+				corridor.width = 0;
 				corridor.height = length;
+				corridor.facing = 'SOUTH';
 				for(temp_y = y; temp_y < (y + length); temp_y++){
 					tile_data[temp_x][temp_y].value = CORRIDOR;
 				}
@@ -385,9 +402,10 @@ function PlayState(){
 					if(tile_data[temp_x][temp_y].value != EARTH) return false;
 				}
 				corridor.top = y;
-				corridor.left = x;
+				corridor.left = x-1;
 				corridor.width = length;
-				corridor.height = 1;
+				corridor.height = 0;
+				corridor.facing = 'EAST';
 				for(temp_x = x; temp_x < (x + length); temp_x++){
 					tile_data[temp_x][temp_y].value = CORRIDOR;
 				}
@@ -401,15 +419,61 @@ function PlayState(){
 					if(tile_data[temp_x][temp_y].value != EARTH) return false;
 				}
 				corridor.top = y;
-				corridor.left = x - length;
+				corridor.left = x - length + 1;
 				corridor.width = length;
-				corridor.height = 1;
+				corridor.height = 0;
+				corridor.facing = 'WEST';
 				for(temp_x = x; temp_x > (x - length); temp_x--){
 					tile_data[temp_x][temp_y].value = CORRIDOR;
 				}
 				break;
 		}
 		return corridor;
+	}
+
+	var validateCorridor = function(corridor){
+		var start_x = corridor.left;
+		var start_y = corridor.top;
+		var end_x = corridor.left + corridor.width;
+		var end_y = corridor.top + corridor.height;
+		console.log("Start: " + start_x + "," + start_y + " : End: " + end_x + ", " + end_y + " Facing: " + corridor.facing);
+		//console.log("Neighbor: " + getNumInValidNeighbors(start_x,start_y) + " : " + getNumInValidNeighbors(end_x, end_y));
+		if(getNumInValidNeighbors(start_x, start_y) == 3 || getNumInValidNeighbors(end_x, end_y) == 3){
+			//remove me!
+			console.log("REMOVE ME");
+			var doorRemoved = false;
+			for(var x = start_x; x <= end_x; x++){
+				for(var y = start_y; y <= end_y; y++){
+					if(tile_data[x][y].value == CORRIDOR)
+						tile_data[x][y].value = EARTH;
+					else if(tile_data[x][y].value == DOOR){
+						tile_data[x][y].value = WALL;
+						doorRemoved = true;
+					}						
+				}
+			}
+			if(!doorRemoved)
+				console.log("Door has not been removed! " + corridor.facing);
+		}
+		
+	}
+	
+	var getNumInValidNeighbors = function(x,y){
+		//get total
+		var total = 0;
+		if(y-1 <= 0 || (tile_data[x][y-1].value == EARTH || tile_data[x][y-1].value == WALL)){ //NORTH
+			total+=1;
+		}
+		if(y+1 >= dungeon_height || (tile_data[x][y+1].value == EARTH || tile_data[x][y+1] == WALL)){ //SOUTH
+			total+=1;
+		}
+		if(x-1 <= 0 || (tile_data[x-1][y].value == EARTH || tile_data[x-1][y].value == WALL)){ //WEST
+			total+=1;
+		}
+		if(x+1 >= dungeon_width || (tile_data[x+1][y].value == EARTH || tile_data[x+1][y].value == WALL)){ //EAST
+			total+=1;
+		}
+		return total;
 	}
 }
 
