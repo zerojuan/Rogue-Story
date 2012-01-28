@@ -25,7 +25,7 @@
     <?php } ?>
     <p>
       <pre>
-        <canvas id="canvas_rpg" width="800px" height="600px"></canvas> 
+        <canvas id="canvas_rpg" width="800px" height="640px"></canvas> 
       </pre>
     </p>
 

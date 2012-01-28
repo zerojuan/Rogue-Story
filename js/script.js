@@ -6,9 +6,9 @@
 function PlayState(){
 	var play_state = this;
 	
-	var tile_width = 8;
+	var tile_width = 16;
 	var dungeon_width = 50;
-	var dungeon_height = 50;
+	var dungeon_height = 40;
 	var viewport;
 	
 	//player data
@@ -60,9 +60,7 @@ function PlayState(){
 		env_sheet = new jaws.SpriteSheet({frame_size:[tile_width, tile_width], image:"images/lofi_environment.png", orientation:"right"});
 			
 		//initialize tile map
-		viewport = new jaws.Viewport({ 
-																	 
-																	x: 0, y: 0});
+		viewport = new jaws.Viewport({x: 0, y: 0});
 
 		tile_map = new jaws.TileMap({cell_size: [tile_width, tile_width], size: [dungeon_width * tile_width, dungeon_height * tile_width]});
 		
