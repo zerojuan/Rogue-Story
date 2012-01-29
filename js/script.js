@@ -2,6 +2,9 @@
  * Play State
  */
 
+var hp_label;
+var xp_label;
+var level_label;
 
 function PlayState(){
 	var play_state = this;
@@ -11,6 +14,8 @@ function PlayState(){
 	var dungeon_height = 30;
 	var viewport;
 	
+	var dialogs = new Dialogs();
+	
 	//player data
 	var player;
 	var player_data = {x: 0, y: 0, steps:0, 
@@ -18,11 +23,16 @@ function PlayState(){
 											backpack: [],
 											level: 1,
 											hp: 50,
+											max_hp: 100,
 											armor: 10,
 											evasion: 10,
 											strength: 10,
-											hunger: 100
+											hunger: 100,
+											xpNow: 0,
+											xpNextLevel: 100 
 										};
+	var depth = 0;
+	var area = 0;
 	
 	var dungeon_features;
 	
@@ -44,7 +54,7 @@ function PlayState(){
 	
 	//enemy layer
 	var enemy_map;
-	var enemy_list;
+	var enemy_data;
 	
 	//sprite sheets
 	var character_sheet;
@@ -61,13 +71,13 @@ function PlayState(){
 			EAST = 2,
 			WEST = 3;
 	//===== ENVIRONMENT SPRITESHEET INDEX ===/
-	var FLOOR = 102,
-			EARTH = 28,
-			CORRIDOR = 6,
-			DOOR = 26,
-			DOOR_OPEN = 27,
-			STAIR_UP = 23,
-			STAIR_DOWN = 24,
+	var FLOOR = 12,
+			EARTH = 3,
+			CORRIDOR = 4,
+			DOOR = 14,
+			DOOR_OPEN = 15,
+			STAIR_UP = 7,
+			STAIR_DOWN = 8,
 			WALL = 0;
 	//===== PICKABLE SPRITESHEET INDEX ======//
 	var WEAPON_RARE = 56,
@@ -78,25 +88,37 @@ function PlayState(){
 			ITEM_XP = 3,
 			CHEST = 2;		
 	
+	
 	this.setup = function(){
+		hp_label = document.getElementById("hp");		
+		hp_label.innerHTML = player_data.hp;
+		
+		xp_label = document.getElementById("xp");
+		xp_label.innerHTML = player_data.xpNow + "/" + player_data.xpNextLevel;
+		
+		level_label = document.getElementById("level");
+		level_label.innerHTML = player_data.level;
+		
 		//initialize spritesheets
 		character_sheet = new jaws.SpriteSheet({frame_size:[tile_width, tile_width], image:"images/lofi_char.png", orientation:"right"});
-		env_sheet = new jaws.SpriteSheet({frame_size:[tile_width, tile_width], image:"images/lofi_environment.png", orientation:"right"});
+		env_sheet = new jaws.SpriteSheet({frame_size:[tile_width, tile_width], image:"images/lofi_env.png", orientation:"right"});
 		enemy_sheet = new jaws.SpriteSheet({frame_size:[tile_width, tile_width], image:"images/lofi_enemy.png", orientation:"right"});
 		obj_sheet = new jaws.SpriteSheet({frame_size:[tile_width, tile_width], image:"images/lofi_obj.png", orientation:"right"});
 			
-		var enemy = new Enemy(10, 10, 1, 1);
 		//initialize tile map
 		viewport = new jaws.Viewport({x: 0, y: 0});
 
 		tile_map = new jaws.TileMap({cell_size: [tile_width, tile_width], size: [dungeon_width * tile_width, dungeon_height * tile_width]});
 		
-		goDeeper();		
+		goDeeper();
 		
 		//initialize player sprite position
 		player = new jaws.Sprite({x:player_data.x * tile_width, y:player_data.y * tile_width, scale: 1, anchor: "top_left"});
 		player.setImage(character_sheet.frames[3]);
 		jaws.context.mozImageSmoothingEnabled = false;
+		
+		appendLog(dialogs.showIntro());
+		tweet("Is Adventuring...");
 		
 		jaws.preventDefaultKeys(["up", "down", "left", "right", "space"]);
 		
@@ -113,6 +135,7 @@ function PlayState(){
 		//render tilemap
 		viewport.drawTileMap(tile_map);
 		pickable_map.drawIf(isObjVisible);
+		enemy_map.drawIf(isEnemyVisible);
 		//render object map
 		//render enemy map
 		//render player
@@ -126,6 +149,11 @@ function PlayState(){
 			 	
 		var mod_x = 0,
 			  mod_y = 0;	 	
+		var spacePressed = false;
+		if(player_data.hp <= 0){
+			return;
+		}
+		
 		if(key == "up"){
 			if(!isPassable(player_x, player_y - 1)) return;
 			mod_y = -1;
@@ -139,15 +167,19 @@ function PlayState(){
 			if(!isPassable(player_x+1, player_y)) return;
 			mod_x = 1;
 		}else if(key == "space"){
-			
+			spacePressed = true;
 		}
-		computeMove(player_x, player_y, mod_x, mod_y);
+		if(spacePressed){
+			doAction(player_x, player_y);
+		}else{
+			computeMove(player_x, player_y, mod_x, mod_y);
+		}
+		//enemy move
+		computeEnemyMove(player_data.x, player_data.y);
 		updateVision(player_data.x, player_data.y);
 		player.moveTo(player_data.x * tile_width, player_data.y*tile_width);
+		
 		renderMap();
-		//detect attack
-		//detect item move
-		//move the rest of the world
 	}
 	
 	var computeMove = function(player_x, player_y, mod_x, mod_y){
@@ -157,22 +189,190 @@ function PlayState(){
 			openDoor(new_x, new_y);
 		}else if(isChest(new_x, new_y)){
 			openChest(new_x,new_y);
+		}else if(isEnemy(new_x, new_y)){
+			attackEnemy(new_x,new_y);
 		}else if(isExit(new_x,new_y)){
 			goDeeper();
 		}else{
+			computePlayerRunAway(new_x, new_y);
 			player_data.x = new_x;
 			player_data.y = new_y;
 		}
 	}
 	
+	var updateLabels = function(){
+		hp_label.innerHTML = player_data.hp;
+		xp_label.innerHTML = player_data.xpNow + "/" + player_data.xpNextLevel;
+		level_label.innerHTML = player_data.level;
+	}
+	
+	
+	var tweet = function(text){
+		$.get('tweet.php', { status: text}, function(data) {
+  			console.log("Success tweet");
+		});
+	}
+	var appendLog = function(text,type){
+		$("<p class='"+type+"'>"+text+"</p>").hide().prependTo(".rightHud").fadeIn("slow");
+	}
+	
+	var attackPlayer = function(enemy){
+		console.log("Enemy Strength: " + enemy.strength + " Player HP: " + player_data.hp);
+		player_data.hp -= enemy.strength;
+		hp_label.innerHTML = player_data.hp;
+		appendLog(dialogs.getHurtStory(enemy.name, enemy.strength, enemy.type),'hurt');
+		if(player_data.hp <= 0){
+			//dies
+			appendLog(dialogs.getDieStory(enemy.name, enemy.type), 'die');
+			tweet("Dead. At Lvl " + player_data.level + ". Killed by a " + enemy.name + ".");
+		}
+		enemy.hasMoved = true;
+	}
+	
+	var attackEnemy = function(x,y){
+		var enemy = enemy_data[x][y];
+		console.log("Player Strength: " + player_data.strength + " Enemy HP: " + enemy.hp);
+		enemy.hp -= player_data.strength;
+		console.log("Enemy Health: " + enemy.hp);
+		appendLog(dialogs.getAttackStory(enemy.name, player_data.strength, enemy.type),'attack');
+		if(enemy.hp <= 0){
+			addXP(enemy.xpDrop);
+    	enemy_data[x][y] = undefined;
+    	appendLog(dialogs.getKillStory(enemy.name, enemy.type),'kill');
+		}
+	}
+	
+	var addXP = function(xp){
+		player_data.xpNow += xp;
+		updateLabels();
+		if(player_data.xpNow >= player_data.xpNextLevel){
+			player_data.xpNow = player_data.xpNow - player_data.xpNextLevel;
+			levelUp();
+		}
+	}
+	
+	var levelUp = function(){
+		player_data.level += 1;
+		player_data.strength += 1;
+		player_data.max_hp += 5;
+		player_data.evasion += 1;
+		player_data.hp = player_data.max_hp;
+		updateLabels();
+	}
+	
+	var computePlayerRunAway = function(player_x, player_y){
+		if(enemy_data[player_x+1][player_y] != undefined){
+			attackPlayer(enemy_data[player_x+1][player_y]);
+		}
+		if(enemy_data[player_x-1][player_y] != undefined){
+			attackPlayer(enemy_data[player_x-1][player_y]);
+		}
+		if(enemy_data[player_x][player_y-1] != undefined){
+			attackPlayer(enemy_data[player_x][player_y-1]);
+		}
+		if(enemy_data[player_x][player_y+1] != undefined){
+			attackPlayer(enemy_data[player_x][player_y+1]);
+		}
+	}
+	
+	var computeEnemyMove = function(player_x, player_y){
+		var top = (player_y - 5) < 0 ? 0 : player_y - 5;
+		var left = (player_x - 5) < 0 ? 0 : player_x - 5;
+		var bottom = (player_y + 5) >= dungeon_height ? dungeon_height-1 : player_y + 5;
+		var right = (player_x + 5) >= dungeon_width ? dungeon_width-1 : player_x + 5;
+		
+		for(var col = left; col <= right; col++){
+			for(var row = top; row <= bottom; row++){
+				if(enemy_data[col][row] != undefined){
+					var enemy = enemy_data[col][row];
+					if(enemy.hasMoved == false && enemy.isInRange(player_x, player_y, isVisionBlocker)){
+						if(enemy.inLethalRange(player_x,player_y)){
+							enemy.hasMoved = true;
+							//you can hide behind the door
+							if(!isDoor(player_x,player_y))
+								attackPlayer(enemy);
+						}else{
+							console.log("I can see you");
+							var mod_x = 0;
+							var mod_y = 0;
+							if(player_x - enemy.x > 0){
+								mod_x = 1;
+							}else if(player_x - enemy.x < 0){
+								mod_x = -1;
+							}
+							
+							if(player_y - enemy.y > 0){
+								mod_y = 1;
+							}else if(player_x - enemy.y < 0){
+								mod_y = -1;
+							}
+							
+							//try moving x-wise
+							if(isPassable(enemy.x + mod_x, enemy.y)){
+								if(enemy_data[enemy.x + mod_x][ enemy.y] == undefined){									
+									delete enemy_data[enemy.x][enemy.y];				
+									console.log("Before: Enemy: " + enemy.x + ", " + enemy.y + " Player is at: " + player_x + "," + player_y);					
+									enemy.move(enemy.x+mod_x, enemy.y);
+									enemy_data[enemy.x][enemy.y] = enemy;
+									enemy.hasMoved = true;
+									console.log("Enemy: " + enemy.x + ", " + enemy.y + " Player is at: " + player_x + "," + player_y);
+								}
+							}
+							
+							if(!enemy.hasMoved){
+								if(isPassable(enemy.x, enemy.y + mod_y)){
+									if(enemy_data[enemy.x][enemy.y + mod_y] == undefined){
+										delete enemy_data[enemy.x][enemy.y];
+										console.log("Before: Enemy: " + enemy.x + ", " + enemy.y + " Player is at: " + player_x + "," + player_y);
+										enemy.move(enemy.x, enemy.y + mod_y);
+										enemy_data[enemy.x][enemy.y] = enemy;
+										enemy.hasMoved = true;
+										console.log("Enemy: " + enemy.x + ", " + enemy.y + " Player is at: " + player_x + "," + player_y);										
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		for(var col = left; col <= right; col++){
+			for(var row = top; row <= bottom; row++){
+					if(enemy_data[col][row] != undefined){
+						enemy_data[col][row].hasMoved = false;
+					}
+			}
+		}		
+	}
+	
+	var doAction = function(x, y){
+		if(isDoorOpen(x,y)){
+			closeDoor(x,y);
+		}else if(isItem(x,y)){
+			pickable_data[x][y] = undefined;
+			console.log("Oh look, shiny!");
+		}
+	}
+	
 	var goDeeper = function(){
 		//generate map
-		player_data = generateMap();
+		depth += 1;
+		if(depth % 3 == 0){
+			area += 1;
+			if(area > 3){
+				depth = 0;
+				area = 0;
+			}
+		}
+		
+		generateMap();
 		updateVision(player_data.x, player_data.y);
 		tile_data[player_data.x][player_data.y].value = STAIR_UP;	
 		console.log("Total Dungeon Features: " + dungeon_features.length);
 		//populate items
 		populateObjects();
+		populateEnemies();
 		renderMap();
 	}
 	
@@ -203,7 +403,13 @@ function PlayState(){
 	}
 	
 	var isEnemyVisible = function(enemy){
-		//TODO: isEnemyVisible
+		var grid_x = enemy.x / tile_width;
+		var grid_y = enemy.y / tile_width;
+		if(tile_data[grid_x][grid_y].isVisible && enemy_data[grid_x][grid_y] != undefined){
+			return true;
+		}
+		//console.log("Invisible Enemy: " + enemy_data[grid_x][grid_y]);
+		return false;
 	}
 	
 	var isExit = function(x,y){
@@ -214,12 +420,34 @@ function PlayState(){
 		return tile_data[x][y].value == DOOR;
 	}
 	
+	var isDoorOpen = function(x,y){
+		return tile_data[x][y].value == DOOR_OPEN;
+	}
+	
 	var openDoor = function(x,y){
 		tile_data[x][y].value = DOOR_OPEN;
 	}
 	
+	var closeDoor = function(x,y){
+		tile_data[x][y].value = DOOR;
+	}
+	
 	var isChest = function(x,y){
 		if(pickable_data[x][y] != undefined && pickable_data[x][y].isCovered){
+			return true;
+		}
+		return false;
+	}
+	
+	var isItem = function(x,y){
+		if(pickable_data[x][y] != undefined && !pickable_data[x][y].isCovered){
+			return true;
+		}
+		return false;
+	}
+	
+	var isEnemy = function(x,y){
+		if(enemy_data[x][y] != undefined){
 			return true;
 		}
 		return false;
@@ -281,6 +509,152 @@ function PlayState(){
 				if(obj_count >= possible_items) break;
 			}
 		}
+	}
+	
+	var populateEnemies = function(){
+		enemy_map = new jaws.SpriteList();
+		var obj_count = 0;
+		enemy_data = new Array(dungeon_width);
+		for(var col = 0; col < dungeon_width; col++){
+			enemy_data[col] = new Array(dungeon_height);
+			for(var row=0; row < dungeon_height; row++){
+				enemy_data[col][row] = undefined;
+			}
+		}
+		for(i in dungeon_features){
+			if(dungeon_features[i].type == 'room'){
+				var room = dungeon_features[i];
+				var num_items = Math.random() * 20 - 5;
+				for(var item_count = 0; item_count < num_items; item_count++){
+					var sub_x = Math.round(Math.random() * (room.width-1));
+					var sub_y = Math.round(Math.random() * (room.height-1));
+					var item_x = (room.left+1) + sub_x-1;
+					var item_y = (room.top+1) + sub_y-1;
+					if(enemy_data[item_x][item_y] == undefined && tile_data[item_x][item_y].value == FLOOR){
+						var enemy_type;
+						var enemy_level;
+						var depth_mod = depth % 3;
+						if(area == 0){
+							enemy_type = Enemy.GOBLINS;
+							if(depth_mod == 0){
+								var dice = Math.random() * 100;
+								if(dice >= 60){
+									enemy_level = 2;
+								}else{
+									enemy_level = 1;
+								}
+							}else if(depth_mod == 1){
+								var dice = Math.random() * 100;
+								if(dice >= 60){
+									enemy_level = 3;
+								}else{
+									enemy_level = 2;
+								}
+							}else if(depth_mod == 2){
+								var dice = Math.random() * 100;
+								if(dice >= 80){
+									enemy_level = 3;
+								}else if(dice >= 50){
+									enemy_level = 2;
+								}else{
+									enemy_level = 1;
+									enemy_type = Enemy.GHOSTS;
+								}
+							}
+						}else if(area == 1){
+							enemy_type = Enemy.GHOSTS;
+							if(depth_mod == 0){
+								var dice = Math.random() * 100;
+								if(dice >= 60){
+									enemy_level = 2;
+								}else{
+									enemy_level = 1;
+								}
+							}else if(depth_mod == 1){
+								var dice = Math.random() * 100;
+								if(dice >= 60){
+									enemy_level = 3;
+								}else{
+									enemy_level = 2;
+								}
+							}else if(depth_mod == 2){
+								var dice = Math.random() * 100;
+								if(dice >= 80){
+									enemy_level = 3;
+								}else if(dice >= 50){
+									enemy_level = 2;
+								}else{
+									enemy_level = 1;
+									enemy_type = Enemy.BONES;
+								}
+							}
+						}else if(area == 2){
+							enemy_type = Enemy.BONES;
+							if(depth_mod == 0){
+								var dice = Math.random() * 100;
+								if(dice >= 60){
+									enemy_level = 2;
+								}else{
+									enemy_level = 1;
+								}
+							}else if(depth_mod == 1){
+								var dice = Math.random() * 100;
+								if(dice >= 60){
+									enemy_level = 3;
+								}else{
+									enemy_level = 2;
+								}
+							}else if(depth_mod == 2){
+								var dice = Math.random() * 100;
+								if(dice >= 80){
+									enemy_level = 3;
+								}else if(dice >= 50){
+									enemy_level = 2;
+								}else{
+									enemy_level = 1;
+									enemy_type = Enemy.DEMONS;
+								}
+							}
+						}else if(area == 3){
+							enemy_type = Enemy.DEMONS;
+							if(depth_mod == 0){
+								var dice = Math.random() * 100;
+								if(dice >= 60){
+									enemy_level = 2;
+								}else{
+									enemy_level = 1;
+								}
+							}else if(depth_mod == 1){
+								var dice = Math.random() * 100;
+								if(dice >= 60){
+									enemy_level = 3;
+								}else{
+									enemy_level = 2;
+								}
+							}else if(depth_mod == 2){
+								var dice = Math.random() * 100;
+								if(dice >= 80){
+									enemy_level = 3;
+								}else if(dice >= 50){
+									enemy_level = 2;
+								}else{
+									enemy_level = 1;
+									enemy_type = Enemy.GOBLINS;
+								}
+							}
+						}
+						
+						var enemy = new Enemy(item_x, item_y,enemy_level,enemy_type, enemy_sheet);
+						enemy_map.push(enemy.sprite);
+						enemy_data[item_x][item_y] = enemy;
+						obj_count++;
+					}
+				}
+				if(obj_count >= possible_items) break;
+			}
+		}
+		console.log("Total enemies: " + obj_count);
+		console.log("Enemies: " + enemy_map.length);
 	}
 	
 	var generateItem = function(x,y){
@@ -426,11 +800,9 @@ function PlayState(){
 			}
 		}
 		
-		player_position = {x: Math.round(initial_room.left + initial_room.width/2),
-					  y: Math.round(initial_room.top + initial_room.height/2)};
-		
+		player_data.x = Math.round(initial_room.left + initial_room.width/2);
+		player_data.y = Math.round(initial_room.top + initial_room.height/2);
 		console.log("Done");
-		return player_position;
 	}
 	
 	var renderMap = function(){
@@ -439,7 +811,7 @@ function PlayState(){
 			for(var i2 = 0; i2 < dungeon_height; i2++){
 				if(tile_data[i][i2].isVisible){
 					var sprite = new jaws.Sprite({x:i*tile_width, y:i2*tile_width, anchor:"top_left"});
-					sprite.setImage(env_sheet.frames[tile_data[i][i2].value]);
+					sprite.setImage(env_sheet.frames[(tile_data[i][i2].value) + (area*16)]);
 					tile_map.push( sprite );
 				}
 			}
@@ -687,8 +1059,12 @@ function PlayState(){
 window.onload = function(){
 	console.log("Loading..");
 	jaws.assets.add("images/lofi_char.png");
-	jaws.assets.add("images/lofi_environment.png");
+	jaws.assets.add("images/lofi_env.png");
 	jaws.assets.add("images/lofi_obj.png");
 	jaws.assets.add("images/lofi_enemy.png");
 	jaws.start(PlayState);
 }
+
+$(document).ready(function(){
+  
+})
