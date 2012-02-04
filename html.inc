@@ -97,7 +97,12 @@
   </body>
   <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js'></script>
   <script src='js/lib/jaws-min.js'></script>
+  <script src='js/tweet.js'></script>
   <script src='js/enemy.js'></script>
   <script src='js/dialogs.js'></script>
+  <script src='js/item-generator.js'></script>
+  <script src='js/enemy-generator.js'></script>
+  <script src='js/dungeon-generator.js'></script>
+  <script src='js/rogue-engine.js'></script>
   <script src='js/script.js'></script>
 </html>
