@@ -1,9 +1,19 @@
-function ItemGenerator(){
+function ItemGenerator(obj_sheet, tile_width, tile_height){
+	var instance = this;
 	
-	var populateObjects = function(){
-		pickable_map = new jaws.SpriteList();
+	this.tile_width = tile_width;
+	this.tile_height = tile_height;
+	this.obj_sheet = obj_sheet;
+	this.pickable_data = {};
+	
+	this.populateObjects = function(dungeon_width, dungeon_height, level_data){
+		var pickable_map = new jaws.SpriteList();
+		var obj_sheet = instance.obj_sheet;
+		var dungeon_features = level_data.dungeon_features;
+		var tile_data = level_data.tile_data;
 		var obj_count = 0;
-		pickable_data = new Array(dungeon_width);
+		var pickable_data = new Array(dungeon_width);
+		var possible_items = 100;
 		for(var col = 0; col < dungeon_width; col++){
 			pickable_data[col] = new Array(dungeon_height);
 			for(var row=0; row < dungeon_height; row++){
@@ -19,9 +29,9 @@ function ItemGenerator(){
 					var sub_y = Math.round(Math.random() * (room.height-1));
 					var item_x = (room.left+1) + sub_x-1;
 					var item_y = (room.top+1) + sub_y-1;
-					if(pickable_data[item_x][item_y] == undefined && tile_data[item_x][item_y].value == FLOOR){
-						var sprite = new jaws.Sprite({x:item_x*tile_width, y:item_y*tile_width, anchor:"top_left"});
-						sprite.setImage(obj_sheet.frames[CHEST]);
+					if(pickable_data[item_x][item_y] == undefined && tile_data[item_x][item_y].value == constants.FLOOR){
+						var sprite = new jaws.Sprite({x:item_x*instance.tile_width, y:item_y*instance.tile_height, anchor:"top_left"});
+						sprite.setImage(obj_sheet.frames[constants.CHEST]);
 						pickable_map.push(sprite);
 						pickable_data[item_x][item_y] = {item_data:{}, isCovered:true,sprite:sprite};
 						obj_count++;
@@ -30,22 +40,26 @@ function ItemGenerator(){
 				if(obj_count >= possible_items) break;
 			}
 		}
+		instance.pickable_map = pickable_map;
+		instance.pickable_data = pickable_data;
 	};
 	
-	var generateItem = function(x,y){
+	instance.generateItem = function(x,y){
 		var dice = Math.random() * 100;
-		if(dice <= enemy_in_the_box_rate){
+		var pickable_data = instance.pickable_data;
+		var obj_sheet = instance.object_sheet;
+		if(dice <= 50){
 					//TODO: Holy crap it's an enemy
 					delete pickable_data[x][y];
 					console.log("Uncovered an enemy");
 		}else{
 					var dice_rarity = Math.random() * 100;
-					if(dice_rarity <= obj_rarity_rate){
+					if(dice_rarity <= 30){ //object rarity rate
 						//produce rare object
-						pickable_data[x][y].sprite.setImage(obj_sheet.frames[WEAPON_RARE]);
+						pickable_data[x][y].sprite.setImage(obj_sheet.frames[constants.WEAPON_COMMON]);
 					}else{
 						//produce ordinary object
-						pickable_data[x][y].sprite.setImage(obj_sheet.frames[WEAPON_COMMON]);
+						pickable_data[x][y].sprite.setImage(obj_sheet.frames[constants.WEAPON_RARE]);
 					}
 		}
 	};

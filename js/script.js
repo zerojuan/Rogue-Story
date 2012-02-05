@@ -29,15 +29,6 @@ function PlayState(){
 											xpNow: 0,
 											xpNextLevel: 100 
 										};
-	var dungeon_features;
-	
-	//feature percentage
-	var room_percentage = 60,
-			corridor_percentage = 40;
-	var possible_items = 20;
-	var enemy_in_the_box_rate = 20;
-	var obj_rarity_rate = 10;
-	var total_features = 90;
 	
 	//tile_data and tile_map
 	var tile_map;
@@ -56,6 +47,8 @@ function PlayState(){
 	var env_sheet;
 	var obj_sheet;
 	var enemy_sheet;
+	
+	var rogueEngine;
 	
 	
 	this.setup = function(){
@@ -79,15 +72,18 @@ function PlayState(){
 
 		tile_map = new jaws.TileMap({cell_size: [tile_width, tile_width], size: [dungeon_width * tile_width, dungeon_height * tile_width]});
 		
-		goDeeper();
+		rogueEngine = new RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, enemy_sheet);
+		
+		rogueEngine.goDeeper();
+		renderMap();
 		
 		//initialize player sprite position
 		player = new jaws.Sprite({x:player_data.x * tile_width, y:player_data.y * tile_width, scale: 1, anchor: "top_left"});
 		player.setImage(character_sheet.frames[3]);
 		jaws.context.mozImageSmoothingEnabled = false;
 		
-		appendLog(dialogs.showIntro());
-		tweet("Is Adventuring...");
+		//appendLog(dialogs.showIntro());
+		//tweet("Is Adventuring...");
 		
 		jaws.preventDefaultKeys(["up", "down", "left", "right", "space"]);
 		
@@ -103,8 +99,8 @@ function PlayState(){
 		jaws.clear();
 		//render tilemap
 		viewport.drawTileMap(tile_map);
-		pickable_map.drawIf(isObjVisible);
-		enemy_map.drawIf(isEnemyVisible);
+		rogueEngine.itemGenerator.pickable_map.drawIf(rogueEngine.isObjVisible);
+		rogueEngine.enemyGenerator.enemy_map.drawIf(rogueEngine.isEnemyVisible);
 		//render object map
 		//render enemy map
 		//render player
@@ -124,28 +120,28 @@ function PlayState(){
 		}
 		
 		if(key == "up"){
-			if(!isPassable(player_x, player_y - 1)) return;
+			if(!rogueEngine.isPassable(player_x, player_y - 1)) return;
 			mod_y = -1;
 		}else if(key == "down"){
-			if(!isPassable(player_x, player_y + 1)) return;
+			if(!rogueEngine.isPassable(player_x, player_y + 1)) return;
 			mod_y = 1;
 		}else if(key == "left"){
-			if(!isPassable(player_x - 1, player_y)) return;
+			if(!rogueEngine.isPassable(player_x - 1, player_y)) return;
 			mod_x = -1;
 		}else if(key == "right"){
-			if(!isPassable(player_x+1, player_y)) return;
+			if(!rogueEngine.isPassable(player_x+1, player_y)) return;
 			mod_x = 1;
 		}else if(key == "space"){
 			spacePressed = true;
 		}
 		if(spacePressed){
-			doAction(player_x, player_y);
+			rogueEngine.doAction(player_x, player_y);
 		}else{
 			computeMove(player_x, player_y, mod_x, mod_y);
 		}
 		//enemy move
-		computeEnemyMove(player_data.x, player_data.y);
-		updateVision(player_data.x, player_data.y);
+		rogueEngine.computeEnemyMove(player_data.x, player_data.y);
+		rogueEngine.updateVision(player_data.x, player_data.y);
 		player.moveTo(player_data.x * tile_width, player_data.y*tile_width);
 		
 		renderMap();
@@ -154,19 +150,23 @@ function PlayState(){
 	var computeMove = function(player_x, player_y, mod_x, mod_y){
 		var new_x = player_x+mod_x,
 				new_y = player_y+mod_y;
-		if(isDoor(new_x, new_y)){
-			openDoor(new_x, new_y);
-		}else if(isChest(new_x, new_y)){
-			openChest(new_x,new_y);
-		}else if(isEnemy(new_x, new_y)){
-			attackEnemy(new_x,new_y);
-		}else if(isExit(new_x,new_y)){
-			goDeeper();
+		if(rogueEngine.isDoor(new_x, new_y)){
+			rogueEngine.openDoor(new_x, new_y);
+		}else if(rogueEngine.isChest(new_x, new_y)){
+			rogueEngine.openChest(new_x,new_y);
+		}else if(rogueEngine.isEnemy(new_x, new_y)){
+			rogueEngine.attackEnemy(new_x,new_y, onAttackDone);
+		}else if(rogueEngine.isExit(new_x,new_y)){
+			rogueEngine.goDeeper();
 		}else{
-			computePlayerRunAway(new_x, new_y);
+			//rogueEngine.computePlayerRunAway(new_x, new_y);
 			player_data.x = new_x;
 			player_data.y = new_y;
 		}
+	}
+	
+	var onAttackDone = function(result){
+		console.log(result.story);
 	}
 	
 	var updateLabels = function(){
@@ -176,12 +176,13 @@ function PlayState(){
 	}
 	
 	var renderMap = function(){
+		var tile_data = rogueEngine.dungeonGenerator.tile_data;
 		tile_map.clear();
 		for(var i = 0; i < dungeon_width; i++){
 			for(var i2 = 0; i2 < dungeon_height; i2++){
 				if(tile_data[i][i2].isVisible){
 					var sprite = new jaws.Sprite({x:i*tile_width, y:i2*tile_width, anchor:"top_left"});
-					sprite.setImage(env_sheet.frames[(tile_data[i][i2].value) + (area*16)]);
+					sprite.setImage(env_sheet.frames[(tile_data[i][i2].value) + (0*16)]);
 					tile_map.push( sprite );
 				}
 			}

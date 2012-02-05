@@ -1,5 +1,5 @@
 function Tweet(){
-	tweet : function(text){
+	this.tweet = function(text){
 		$.get('tweet.php', { status: text}, function(data) {
   			console.log("Success tweet");
 		});

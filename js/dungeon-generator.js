@@ -13,7 +13,7 @@ function DungeonGenerator(){
 		for(var col = 0; col < dungeon_width; col++){
 			tile_data[col] = new Array(dungeon_height);
 			for(var row=0; row < dungeon_height; row++){
-				tile_data[col][row] = {value:EARTH, isVisible:false};
+				tile_data[col][row] = {value:constants.EARTH, isVisible:false};
 			}
 		}
 		
@@ -21,13 +21,14 @@ function DungeonGenerator(){
 		var dungeon_features = new Array();
 		
 		//DIG OUT A SINGLE ROOM IN THE CENTER
-		initial_room = makeRoom(Math.round(dungeon_width/2), Math.round(dungeon_height/2), 8, 8, parseInt(Math.random() * 3), 
+		initial_room = instance.makeRoom(Math.round(dungeon_width/2), Math.round(dungeon_height/2), 8, 8, parseInt(Math.random() * 3), 
 			dungeon_width, dungeon_height, tile_data);
 		
 		dungeon_features.push(initial_room);
 		
 		//count how many features to add
 		var current_features = 0;
+		var total_features = 0;
 		
 		for(var countingTries = 0; countingTries < 1000; countingTries++){
 			if(current_features == total_features){
@@ -89,7 +90,7 @@ function DungeonGenerator(){
 				//choose what to build
 				var feature = Math.random() * 100;
 				if(feature <= room_percentage){
-					var room = makeRoom((new_x+mod_x), (new_y+mod_y), 6, 6, valid_tile, dungeon_width, dungeon_height);
+					var room = instance.makeRoom((new_x+mod_x), (new_y+mod_y), 6, 6, valid_tile, dungeon_width, dungeon_height);
 					if(room != false){
 						current_features++; //add to quota
 						tile_data[new_x][new_y].value = constants.DOOR; //mark the wall opening with a door
@@ -97,7 +98,7 @@ function DungeonGenerator(){
 						dungeon_features.push(room); 
 					}
 				}else if(feature >= corridor_percentage){
-					var corridor = makeCorridor((new_x+mod_x), (new_y+mod_y), 6, valid_tile, dungeon_width, dungeon_height);
+					var corridor = instance.makeCorridor((new_x+mod_x), (new_y+mod_y), 6, valid_tile, dungeon_width, dungeon_height);
 					if(corridor != false){
 						current_features++;
 						tile_data[new_x][new_y].value = constants.DOOR;
@@ -132,6 +133,7 @@ function DungeonGenerator(){
 		}
 		
 		instance.tile_data = tile_data;
+		instance.dungeon_features = dungeon_features;
 		
 		console.log("Done");
 		
@@ -382,16 +384,16 @@ function DungeonGenerator(){
 	var getNumInValidNeighbors = function(x, y, tile_data, dungeon_width, dungeon_height){
 		//get total
 		var total = 0;
-		if(y-1 <= 0 || (tile_data[x][y-1].value == EARTH || tile_data[x][y-1].value == WALL)){ //NORTH
+		if(y-1 <= 0 || (tile_data[x][y-1].value == constants.EARTH || tile_data[x][y-1].value == constants.WALL)){ //NORTH
 			total+=1;
 		}
-		if(y+1 >= dungeon_height || (tile_data[x][y+1].value == EARTH || tile_data[x][y+1] == WALL)){ //SOUTH
+		if(y+1 >= dungeon_height || (tile_data[x][y+1].value == constants.EARTH || tile_data[x][y+1] == constants.WALL)){ //SOUTH
 			total+=1;
 		}
-		if(x-1 <= 0 || (tile_data[x-1][y].value == EARTH || tile_data[x-1][y].value == WALL)){ //WEST
+		if(x-1 <= 0 || (tile_data[x-1][y].value == constants.EARTH || tile_data[x-1][y].value == constants.WALL)){ //WEST
 			total+=1;
 		}
-		if(x+1 >= dungeon_width || (tile_data[x+1][y].value == EARTH || tile_data[x+1][y].value == WALL)){ //EAST
+		if(x+1 >= dungeon_width || (tile_data[x+1][y].value == constants.EARTH || tile_data[x+1][y].value == constants.WALL)){ //EAST
 			total+=1;
 		}
 		return total;

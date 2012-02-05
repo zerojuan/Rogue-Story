@@ -1,4 +1,4 @@
-function RogueEngine(tileMap, player_data, enemy_data){
+function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, enemy_sheet){
 	var instance = this;
 	
 	this.tile_width = 16;
@@ -6,24 +6,26 @@ function RogueEngine(tileMap, player_data, enemy_data){
 	this.dungeon_width = 30;
 	this.dungeon_height = 30;
 	
-	this.tileMap = tileMap;
+	this.tile_data = tile_data;
 	this.player_data = player_data;
 	
+	this.enemy_map = enemy_map;
 	this.enemy_data = enemy_data;
 	
 	this.dialogs = new Dialogs();
 	this.tweeter = new Tweet();
 	
 	this.dungeonGenerator = new DungeonGenerator();
-	this.itemGenerator = new ItemGenerator();
-	this.enemyGenerator = new EnemyGenerator();
+	this.itemGenerator = new ItemGenerator(obj_sheet, this.tile_width, this.tile_height);
+	this.enemyGenerator = new EnemyGenerator(enemy_sheet);
 	
 	
 	this.attackPlayer = function(enemy, callback){
-		console.log("Enemy Strength: " + enemy.strength + " Player HP: " + player_data.hp);
 		var player_data = instance.player_data;
 		var dialogs = instance.dialogs;
 		var tweeter = instance.tweeter;
+		
+		console.log("Enemy Strength: " + enemy.strength + " Player HP: " + player_data.hp);
 		
 		player_data.hp -= enemy.strength;
 		
@@ -92,12 +94,12 @@ function RogueEngine(tileMap, player_data, enemy_data){
 			for(var row = top; row <= bottom; row++){
 				if(enemy_data[col][row] != undefined){
 					var enemy = enemy_data[col][row];
-					if(enemy.hasMoved == false && enemy.isInRange(player_x, player_y, isVisionBlocker)){
+					if(enemy.hasMoved == false && enemy.isInRange(player_x, player_y, instance.isVisionBlocker)){
 						if(enemy.inLethalRange(player_x,player_y)){
 							enemy.hasMoved = true;
 							//you can hide behind the door
 							if(!instance.isDoor(player_x,player_y))
-								instance.attackPlayer(enemy);
+								instance.attackPlayer(enemy, function(result){console.log("Attacked player");});
 						}else{
 							console.log("I can see you");
 							var mod_x = 0;
@@ -170,6 +172,9 @@ function RogueEngine(tileMap, player_data, enemy_data){
 		var dungeonGenerator = instance.dungeonGenerator;
 		var player_data = instance.player_data;
 		var tile_data = instance.tile_data;
+		var dungeon_width = instance.dungeon_width;
+		var dungeon_height = instance.dungeon_height;
+		var enemy_map = instance.enemy_map;
 		var enemyGenerator = instance.enemyGenerator;
 		var itemGenerator = instance.itemGenerator;
 		
@@ -184,18 +189,25 @@ function RogueEngine(tileMap, player_data, enemy_data){
 		}
 		
 		var dungeon_data = dungeonGenerator.generateMap(instance.dungeon_width, instance.dungeon_height);
-		tile_data = dungeon_data.tile_data;
+		tile_data = dungeonGenerator.tile_data;
 		player_data.x = dungeon_data.player_x;
 		player_data.y = dungeon_data.player_y;
 		
+		tile_data[player_data.x][player_data.y].value = constants.STAIR_UP;	
+		instance.tile_data = tile_data;
+		
 		instance.updateVision(player_data.x, player_data.y);
 		
-		tile_data[player_data.x][player_data.y].value = constants.STAIR_UP;	
-		
-		console.log("Total Dungeon Features: " + dungeon_features.length);
+		console.log("Total Dungeon Features: " + dungeonGenerator.dungeon_features.length);
 		//populate items
-		itemGenerator.populateObjects();
-		enemyGenerator.populateEnemies();
+		itemGenerator.populateObjects(dungeon_width, dungeon_height, {tile_data: tile_data, dungeon_features: dungeonGenerator.dungeon_features});
+		enemyGenerator.populateEnemies(dungeon_width, dungeon_height, enemy_map, {tile_data: tile_data, dungeon_features: dungeonGenerator.dungeon_features, area: area, depth: depth});
+		
+		instance.enemy_data = enemyGenerator.enemy_data;
+		instance.pickable_data = itemGenerator.pickable_data;
+		
+		instance.area = area;
+		instance.depth = depth;
 	}
 	
 	this.isPassable = function(x, y){

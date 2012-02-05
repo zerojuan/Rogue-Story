@@ -1,10 +1,20 @@
-function EnemyGenerator(){
+function EnemyGenerator(enemy_sheet){
 	var instance = this;
 	
-	var populateEnemies = function(){
-		instance.enemy_map = new jaws.SpriteList();
+	var possible_items = 20;
+	
+	this.enemy_data = {};
+	this.enemy_sheet = enemy_sheet;
+	
+	this.populateEnemies = function(dungeon_width, dungeon_height, enemy_map, level_data){
+		var enemy_map = new jaws.SpriteList();
 		var obj_count = 0;
-		enemy_data = new Array(dungeon_width);
+		var dungeon_features = level_data.dungeon_features;
+		var tile_data = level_data.tile_data;
+		var area = level_data.area;
+		var depth = level_data.depth;
+		var enemy_sheet = instance.enemy_sheet;
+		var enemy_data = new Array(dungeon_width);
 		for(var col = 0; col < dungeon_width; col++){
 			enemy_data[col] = new Array(dungeon_height);
 			for(var row=0; row < dungeon_height; row++){
@@ -20,7 +30,7 @@ function EnemyGenerator(){
 					var sub_y = Math.round(Math.random() * (room.height-1));
 					var item_x = (room.left+1) + sub_x-1;
 					var item_y = (room.top+1) + sub_y-1;
-					if(enemy_data[item_x][item_y] == undefined && tile_data[item_x][item_y].value == FLOOR){
+					if(enemy_data[item_x][item_y] == undefined && tile_data[item_x][item_y].value == constants.FLOOR){
 						var enemy_type;
 						var enemy_level;
 						var depth_mod = depth % 3;
@@ -145,5 +155,8 @@ function EnemyGenerator(){
 		}
 		console.log("Total enemies: " + obj_count);
 		console.log("Enemies: " + enemy_map.length);
+		instance.enemy_map = enemy_map;
+		instance.enemy_data = enemy_data;
+		return enemy_data;
 	}
 }
