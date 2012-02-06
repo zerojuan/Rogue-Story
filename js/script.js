@@ -72,7 +72,7 @@ function PlayState(){
 
 		tile_map = new jaws.TileMap({cell_size: [tile_width, tile_width], size: [dungeon_width * tile_width, dungeon_height * tile_width]});
 		
-		rogueEngine = new RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, enemy_sheet);
+		rogueEngine = new RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, enemy_sheet, appendLog);
 		
 		rogueEngine.goDeeper();
 		renderMap();
@@ -105,6 +105,10 @@ function PlayState(){
 		//render enemy map
 		//render player
 		player.draw();
+	};
+	
+	var appendLog = function(text,type){
+		$("<p class='"+type+"'>"+text+"</p>").hide().prependTo(".rightHud").fadeIn("slow");
 	};
 	
 	var onPressedTurn = function(key){
@@ -167,6 +171,7 @@ function PlayState(){
 	
 	var onAttackDone = function(result){
 		console.log(result.story);
+		appendLog(result.story, result.type);
 	}
 	
 	var updateLabels = function(){

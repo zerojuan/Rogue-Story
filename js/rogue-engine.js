@@ -1,4 +1,4 @@
-function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, enemy_sheet){
+function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, enemy_sheet, appendLog){
 	var instance = this;
 	
 	this.tile_width = 16;
@@ -19,6 +19,7 @@ function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, e
 	this.itemGenerator = new ItemGenerator(obj_sheet, this.tile_width, this.tile_height);
 	this.enemyGenerator = new EnemyGenerator(enemy_sheet);
 	
+	this.appendLog = appendLog;
 	
 	this.attackPlayer = function(enemy, callback){
 		var player_data = instance.player_data;
@@ -81,6 +82,10 @@ function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, e
 		player_data.hp = player_data.max_hp;
 	};
 	
+	var onAttackedPlayer = function(result){
+		instance.appendLog(result.story, result.type);	
+	}
+	
 	this.computeEnemyMove = function(player_x, player_y){
 		var enemy_data = instance.enemy_data;
 		
@@ -99,7 +104,7 @@ function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, e
 							enemy.hasMoved = true;
 							//you can hide behind the door
 							if(!instance.isDoor(player_x,player_y))
-								instance.attackPlayer(enemy, function(result){console.log("Attacked player");});
+								instance.attackPlayer(enemy, onAttackedPlayer);
 						}else{
 							console.log("I can see you");
 							var mod_x = 0;

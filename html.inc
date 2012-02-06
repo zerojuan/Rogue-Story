@@ -72,7 +72,7 @@
 	      	<p>This site is a basic showcase of Twitters OAuth authentication method. If you are having issues try <a href='./clearsessions.php'>clearing your session</a>.</p>
 	      -->
 	    </div>
-	    <hr />
+	    <hr/>
 	    <div class="canvasContent">
 	        <canvas id="canvas_rpg" width="480px" height="480px" style="background:black;"></canvas> 
 	    </div>

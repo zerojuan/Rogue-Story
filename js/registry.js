@@ -9,6 +9,7 @@ constants.WEST = 3;
 
 constants.FLOOR = 12;
 constants.EARTH = 3;
+constants.CORRIDOR = 4;
 constants.DOOR = 14;
 constants.DOOR_OPEN = 15;
 constants.STAIR_UP = 7;

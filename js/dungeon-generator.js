@@ -13,7 +13,7 @@ function DungeonGenerator(){
 		for(var col = 0; col < dungeon_width; col++){
 			tile_data[col] = new Array(dungeon_height);
 			for(var row=0; row < dungeon_height; row++){
-				tile_data[col][row] = {value:constants.EARTH, isVisible:false};
+				tile_data[col][row] = {value:constants.EARTH, isVisible:true};
 			}
 		}
 		
@@ -28,7 +28,9 @@ function DungeonGenerator(){
 		
 		//count how many features to add
 		var current_features = 0;
-		var total_features = 0;
+		var total_features = 100;
+		var room_percentage = 50;
+		var corridor_percentage = 50;
 		
 		for(var countingTries = 0; countingTries < 1000; countingTries++){
 			if(current_features == total_features){
@@ -90,7 +92,7 @@ function DungeonGenerator(){
 				//choose what to build
 				var feature = Math.random() * 100;
 				if(feature <= room_percentage){
-					var room = instance.makeRoom((new_x+mod_x), (new_y+mod_y), 6, 6, valid_tile, dungeon_width, dungeon_height);
+					var room = instance.makeRoom((new_x+mod_x), (new_y+mod_y), 6, 6, valid_tile, dungeon_width, dungeon_height, tile_data);
 					if(room != false){
 						current_features++; //add to quota
 						tile_data[new_x][new_y].value = constants.DOOR; //mark the wall opening with a door
@@ -98,7 +100,7 @@ function DungeonGenerator(){
 						dungeon_features.push(room); 
 					}
 				}else if(feature >= corridor_percentage){
-					var corridor = instance.makeCorridor((new_x+mod_x), (new_y+mod_y), 6, valid_tile, dungeon_width, dungeon_height);
+					var corridor = instance.makeCorridor((new_x+mod_x), (new_y+mod_y), 6, valid_tile, dungeon_width, dungeon_height, tile_data);
 					if(corridor != false){
 						current_features++;
 						tile_data[new_x][new_y].value = constants.DOOR;
@@ -163,6 +165,7 @@ function DungeonGenerator(){
 				
 		switch(direction){
 			case NORTH:
+				console.log("Making NORTH room...");
 				//check if there's enough space
 				for(temp_y = y; temp_y > (y - room_height); temp_y--){
 					if(temp_y < 0 || temp_y >= dungeon_height) return false;
@@ -176,6 +179,7 @@ function DungeonGenerator(){
 				room.width = room_width;
 				room.height = room_height;
 				room.facing = 'NORTH';
+				console.log("DONE");
 				for (temp_y = y; temp_y > (y-room_height); temp_y--){
 					for (temp_x = Math.round(x-room_width/2); temp_x < (x+(room_width+1)/2); temp_x++){
 						//start with the walls
@@ -189,6 +193,7 @@ function DungeonGenerator(){
 				}
 				break;
 			case SOUTH:
+				console.log("Making SOUTH room...");
 				for(temp_y = y; temp_y < (y+room_height); temp_y++){
 					if(temp_y < 0 || temp_y >= dungeon_height) return false;
 					for(temp_x = Math.round(x - room_width/2); temp_x < (x+(room_width+1)/2); temp_x++){
@@ -201,6 +206,7 @@ function DungeonGenerator(){
 				room.width = room_width;
 				room.height = room_height;
 				room.facing = 'SOUTH';
+				console.log("DONE");
 				for (temp_y = y; temp_y < (y+room_height); temp_y++){
 					for (temp_x = Math.round(x-room_width/2); temp_x < (x+(room_width+1)/2); temp_x++){
 								//start with the walls
@@ -214,6 +220,7 @@ function DungeonGenerator(){
 				}
 				break;
 			case EAST:
+				console.log("Making EAST room...");
 				for(temp_y = Math.round(y-room_height/2);temp_y < (y+(room_height+1)/2); temp_y++){
 					if(temp_y < 0 || temp_y >= dungeon_height) return false;
 					for(temp_x = x; temp_x < (x+room_width); temp_x++){
@@ -226,6 +233,7 @@ function DungeonGenerator(){
 				room.width = room_width;
 				room.height = room_height;
 				room.facing = 'EAST';
+				console.log("DONE");
 				for (temp_y = Math.round(y-room_height/2); temp_y < (y+(room_height+1)/2); temp_y++){
 					for (temp_x = x; temp_x < (x+room_width); temp_x++){
 			 
@@ -239,6 +247,7 @@ function DungeonGenerator(){
 				}
 				break;
 			case WEST:
+				console.log("Making WEST room...");
 				for(temp_y = Math.round(y-room_height/2);temp_y < (y+(room_height+1)/2); temp_y++){
 					if(temp_y < 0 || temp_y >= dungeon_height) return false;
 					for(temp_x = x; temp_x > (x - room_width); temp_x--){
@@ -251,6 +260,7 @@ function DungeonGenerator(){
 				room.width = room_width;
 				room.height = room_height;
 				room.facing = 'WEST';
+				console.log("DONE");
 				for (temp_y = Math.round(y-room_height/2); temp_y < (y+(room_height+1)/2); temp_y++){
 					for (temp_x = x; temp_x > (x-room_width); temp_x--){
 						if (temp_x == x) tile_data[temp_x][temp_y].value = WALL;
@@ -266,7 +276,7 @@ function DungeonGenerator(){
 		return room;
 	}
 	
-	var makeCorridor = function(x,y, length, direction, dungeon_width, dungeon_height){
+	this.makeCorridor = function(x,y, length, direction, dungeon_width, dungeon_height, tile_data){
 		length = parseInt(Math.random() * length + 2);
 		
 		var temp_x = 0,
@@ -283,10 +293,12 @@ function DungeonGenerator(){
 		
 		var WALL = constants.WALL;
 		var FLOOR = constants.FLOOR;
-		var EARTH = constants.EARTH;							  
+		var EARTH = constants.EARTH;
+		var CORRIDOR = constants.CORRIDOR;							  
 				
 		switch(direction){
 			case NORTH:
+				console.log("Making NORTH corridor...");
 				if(x < 0 || x>=dungeon_width) return false;
 				else temp_x = x;
 				
@@ -299,11 +311,13 @@ function DungeonGenerator(){
 				corridor.width = 0;
 				corridor.height = length;
 				corridor.facing = 'NORTH';
+				console.log("DONE");
 				for(temp_y = y; temp_y > (y - length); temp_y--){
 					tile_data[temp_x][temp_y].value = CORRIDOR;
 				}
 				break;
 			case SOUTH:
+				console.log("Making SOUTH corridor...");
 				if(x < 0 || x >= dungeon_width) return false;
 				else temp_x = x;
 				
@@ -316,11 +330,13 @@ function DungeonGenerator(){
 				corridor.width = 0;
 				corridor.height = length;
 				corridor.facing = 'SOUTH';
+				console.log("DONE");
 				for(temp_y = y; temp_y < (y + length); temp_y++){
 					tile_data[temp_x][temp_y].value = CORRIDOR;
 				}
 				break;
 			case EAST:
+				console.log("Making EAST corridor...");
 				if(y < 0 || y >= dungeon_height) return false;
 				else temp_y = y;
 				
@@ -333,11 +349,13 @@ function DungeonGenerator(){
 				corridor.width = length;
 				corridor.height = 0;
 				corridor.facing = 'EAST';
+				console.log("DONE");
 				for(temp_x = x; temp_x < (x + length); temp_x++){
 					tile_data[temp_x][temp_y].value = CORRIDOR;
 				}
 				break;
 			case WEST:
+				console.log("Making WEST corridor...");
 				if(y < 0 || y >= dungeon_height) return false;
 				else temp_y = y;
 				
@@ -350,6 +368,7 @@ function DungeonGenerator(){
 				corridor.width = length;
 				corridor.height = 0;
 				corridor.facing = 'WEST';
+				console.log("DONE");
 				for(temp_x = x; temp_x > (x - length); temp_x--){
 					tile_data[temp_x][temp_y].value = CORRIDOR;
 				}
