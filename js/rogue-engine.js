@@ -1,4 +1,4 @@
-function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, enemy_sheet, appendLog){
+function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, enemy_sheet, appendLog, updateHUD){
 	var instance = this;
 	
 	this.tile_width = 16;
@@ -20,6 +20,7 @@ function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, e
 	this.enemyGenerator = new EnemyGenerator(enemy_sheet);
 	
 	this.appendLog = appendLog;
+	this.updateHUD = updateHUD;
 	
 	this.attackPlayer = function(enemy, callback){
 		var player_data = instance.player_data;
@@ -37,6 +38,9 @@ function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, e
 			story = dialogs.getDieStory(enemy.name, enemy.type);
 			type = 'die';
 			tweeter.tweet("Dead. At Lvl " + player_data.level + ". Killed by a " + enemy.name + ".");
+			instance.updateHUD({hp: player_data.hp});
+		}else{
+			instance.updateHUD({hp: player_data.hp});
 		}
 		enemy.hasMoved = true;
 		callback({"story":story, 'type': type});
@@ -70,6 +74,8 @@ function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, e
 		if(player_data.xpNow >= player_data.xpNextLevel){
 			player_data.xpNow = player_data.xpNow - player_data.xpNextLevel;
 			instance.levelUp();
+		}else{
+			instance.updateHUD({xp: player_data.xpNow + ' / ' + player_data.xpNextLevel});
 		}
 	};
 	
@@ -80,6 +86,7 @@ function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, e
 		player_data.max_hp += 5;
 		player_data.evasion += 1;
 		player_data.hp = player_data.max_hp;
+		instance.updateHUD({hp: player_data.hp, xp: player_data.xpNow + ' / '+player_data.xpNextLevel, level: player_data.level});
 	};
 	
 	var onAttackedPlayer = function(result){
