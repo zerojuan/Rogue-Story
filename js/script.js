@@ -20,7 +20,7 @@ function PlayState(){
 											equipment: {weapon:null, armor:null},
 											backpack: [],
 											level: 1,
-											hp: 50,
+											hp: 9999,
 											max_hp: 100,
 											armor: 10,
 											evasion: 10,
@@ -182,7 +182,6 @@ function PlayState(){
 	}
 	
 	var onAttackDone = function(result){
-		console.log(result.story);
 		appendLog(result.story, result.type);
 	}
 	
@@ -197,11 +196,14 @@ function PlayState(){
 		tile_map.clear();
 		for(var i = 0; i < dungeon_width; i++){
 			for(var i2 = 0; i2 < dungeon_height; i2++){
-				if(tile_data[i][i2].isVisible){
 					var sprite = new jaws.Sprite({x:i*tile_width, y:i2*tile_width, anchor:"top_left"});
-					sprite.setImage(env_sheet.frames[(tile_data[i][i2].value) + (0*16)]);
+					sprite.setImage(env_sheet.frames[(tile_data[i][i2].value) + (rogueEngine.area*16)]);
+					if(tile_data[i][i2].isVisible){
+						sprite.alpha = 1;
+					}else{
+						sprite.alpha = .5;
+					}
 					tile_map.push( sprite );
-				}
 			}
 		}
 	};

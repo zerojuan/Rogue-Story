@@ -37,7 +37,7 @@ function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, e
 		if(player_data.hp <= 0){
 			story = dialogs.getDieStory(enemy.name, enemy.type);
 			type = 'die';
-			tweeter.tweet("Dead. At Lvl " + player_data.level + ". Killed by a " + enemy.name + ".");
+			//tweeter.tweet("Dead. At Lvl " + player_data.level + ". Killed by a " + enemy.name + ".");
 			instance.updateHUD({hp: player_data.hp});
 		}else{
 			instance.updateHUD({hp: player_data.hp});
@@ -73,7 +73,7 @@ function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, e
 		player_data.xpNow += xp;
 		if(player_data.xpNow >= player_data.xpNextLevel){
 			player_data.xpNow = player_data.xpNow - player_data.xpNextLevel;
-			instance.levelUp();
+			instance.levelUP();
 		}else{
 			instance.updateHUD({xp: player_data.xpNow + ' / ' + player_data.xpNextLevel});
 		}
