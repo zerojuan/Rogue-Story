@@ -316,11 +316,17 @@ function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, e
 	
 	this.updateVision = function(x,y){
 		var tile_data = instance.tile_data;
-		var isVisionBlocker = instance.isVisionBlocker;
+		
 		
 		//every visible thing is now fogged
 		tile_data = instance.refreshVision(tile_data);
 
+		for(var i=90;i<360;i++){
+		    theta_x=Math.cos(i);
+		    theta_y=Math.sin(i);
+		    instance.castRay(tile_data, theta_x, theta_y, x, y);
+		}
+		/*
 		//normal vision
 		tile_data[x+1][y].visibility = constants.VISIBLE;
 		tile_data[x-1][y].visibility = constants.VISIBLE;
@@ -337,7 +343,28 @@ function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, e
 		if(!isVisionBlocker(x, y+1)) tile_data[x][y+2].visibility = constants.VISIBLE;
 		if(!isVisionBlocker(x, y-1)) tile_data[x][y-2].visibility = constants.VISIBLE;
 		
-		tile_data[x][y].visibility = constants.VISIBLE;
+		
+		tile_data[x][y].visibility = constants.VISIBLE;*/
+	}
+	
+	this.castRay = function(tile_data, theta_x, theta_y, player_x, player_y){
+		var view_radius = 4;
+		var ray;
+		var ox,oy;
+			ox = player_x;
+			oy = player_y;
+		var isVisionBlocker = instance.isVisionBlocker;
+		console.log("Player is at " + player_x + ", " + player_y);
+		for(ray=0;ray<view_radius;ray++){
+			var tile_x = Math.round(ox);
+			var tile_y = Math.round(oy);
+			console.log("Ray cast " + ray + ": " + tile_x + ", " + tile_y);
+			tile_data[tile_x][tile_y].visibility = constants.VISIBLE;//Set the tile to visible.
+			if(isVisionBlocker(tile_x,tile_y))
+			      return;
+			ox+=theta_x;
+			oy+=theta_y;
+		}
 	}
 	
 	this.refreshVision = function(tile_data){
