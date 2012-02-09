@@ -248,7 +248,7 @@ function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, e
 		var grid_x = item.x/instance.tile_width;
 		var grid_y = item.y/instance.tile_height;
 		
-		if(tile_data[grid_x][grid_y].isVisible && pickable_data[grid_x][grid_y] != undefined){
+		if(tile_data[grid_x][grid_y].visiblity == constants.VISIBLE && pickable_data[grid_x][grid_y] != undefined){
 			return true;
 		}
 		return false;
@@ -260,7 +260,7 @@ function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, e
 		
 		var grid_x = enemy.x / instance.tile_width;
 		var grid_y = enemy.y / instance.tile_width;
-		if(tile_data[grid_x][grid_y].isVisible && enemy_data[grid_x][grid_y] != undefined){
+		if(tile_data[grid_x][grid_y].visibility == constants.VISIBLE && enemy_data[grid_x][grid_y] != undefined){
 			return true;
 		}
 		
@@ -317,22 +317,37 @@ function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, e
 	this.updateVision = function(x,y){
 		var tile_data = instance.tile_data;
 		var isVisionBlocker = instance.isVisionBlocker;
-		//normal vision
-		tile_data[x+1][y].isVisible = true;
-		tile_data[x-1][y].isVisible = true;
-		tile_data[x][y+1].isVisible = true;
-		tile_data[x][y-1].isVisible = true;
-		//diagonal vision
-		tile_data[x-1][y-1].isVisible = true;
-		tile_data[x+1][y-1].isVisible = true;
-		tile_data[x-1][y+1].isVisible = true;
-		tile_data[x+1][y+1].isVisible = true;
-		//extended vision
-		if(!isVisionBlocker(x+1,y)) tile_data[x+2][y].isVisible = true;
-		if(!isVisionBlocker(x-1,y)) tile_data[x-2][y].isVisible = true;
-		if(!isVisionBlocker(x, y+1)) tile_data[x][y+2].isVisible = true;
-		if(!isVisionBlocker(x, y-1)) tile_data[x][y-2].isVisible = true;
 		
-		tile_data[x][y].isVisible = true;
+		//every visible thing is now fogged
+		tile_data = instance.refreshVision(tile_data);
+
+		//normal vision
+		tile_data[x+1][y].visibility = constants.VISIBLE;
+		tile_data[x-1][y].visibility = constants.VISIBLE;
+		tile_data[x][y+1].visibility = constants.VISIBLE;
+		tile_data[x][y-1].visibility = constants.VISIBLE;
+		//diagonal vision
+		tile_data[x-1][y-1].visibility = constants.VISIBLE;
+		tile_data[x+1][y-1].visibility = constants.VISIBLE;
+		tile_data[x-1][y+1].visibility = constants.VISIBLE;
+		tile_data[x+1][y+1].visibility = constants.VISIBLE;
+		//extended vision
+		if(!isVisionBlocker(x+1,y)) tile_data[x+2][y].visibility = constants.VISIBLE;
+		if(!isVisionBlocker(x-1,y)) tile_data[x-2][y].visibility = constants.VISIBLE;
+		if(!isVisionBlocker(x, y+1)) tile_data[x][y+2].visibility = constants.VISIBLE;
+		if(!isVisionBlocker(x, y-1)) tile_data[x][y-2].visibility = constants.VISIBLE;
+		
+		tile_data[x][y].visibility = constants.VISIBLE;
+	}
+	
+	this.refreshVision = function(tile_data){
+		for(var col = 0; col < instance.dungeon_width; col++){
+			for(var row = 0; row < instance.dungeon_height; row++){
+					if(tile_data[col][row].visibility == constants.VISIBLE){
+						tile_data[col][row].visibility = constants.FOG;
+					}
+			}
+		}
+		return tile_data;
 	}
 }

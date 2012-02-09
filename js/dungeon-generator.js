@@ -13,7 +13,7 @@ function DungeonGenerator(){
 		for(var col = 0; col < dungeon_width; col++){
 			tile_data[col] = new Array(dungeon_height);
 			for(var row=0; row < dungeon_height; row++){
-				tile_data[col][row] = {value:constants.EARTH, isVisible:false};
+				tile_data[col][row] = {value:constants.EARTH, visibility:constants.UN_EXPLORED};
 			}
 		}
 		
@@ -117,12 +117,6 @@ function DungeonGenerator(){
 				var corridor = dungeon_features[i];
 				if(!validateCorridor(corridor, tile_data, dungeon_width, dungeon_height)){
 					delete dungeon_features[i];
-				}else{
-					for(var row = corridor.top; row <= corridor.top+corridor.height; row++ ){
-						for(var col = corridor.left; col <= corridor.left+corridor.width; col++){
-							tile_data[col][row].isVisible = true;
-						}
-					}
 				}				
 			}
 		}
@@ -250,11 +244,12 @@ function DungeonGenerator(){
 				else tile_data[col][row].value = FLOOR;
 			}
 		}
+		/** Test room boundaries
 		for(var row = room.top; row <= room.top+room.height; row++ ){
 			for(var col = room.left; col <= room.left+room.width; col++){
 				tile_data[col][row].isVisible = true;
 			}
-		}
+		}*/
 		return room;
 	}
 	

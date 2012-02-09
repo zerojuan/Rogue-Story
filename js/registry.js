@@ -2,6 +2,10 @@ function constants(){
 	
 }
 
+constants.VISIBLE = 0;
+constants.FOG = 1;
+constants.UN_EXPLORED = 2;
+
 constants.NORTH = 0;
 constants.SOUTH = 1;
 constants.EAST = 2;

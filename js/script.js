@@ -198,10 +198,12 @@ function PlayState(){
 			for(var i2 = 0; i2 < dungeon_height; i2++){
 					var sprite = new jaws.Sprite({x:i*tile_width, y:i2*tile_width, anchor:"top_left"});
 					sprite.setImage(env_sheet.frames[(tile_data[i][i2].value) + (rogueEngine.area*16)]);
-					if(tile_data[i][i2].isVisible){
+					if(tile_data[i][i2].visibility == constants.VISIBLE){
 						sprite.alpha = 1;
-					}else{
+					}else if(tile_data[i][i2].visibility == constants.FOG){
 						sprite.alpha = .5;
+					}else if(tile_data[i][i2].visibility == constants.UN_EXPLORED){
+						sprite.alpha = .1;
 					}
 					tile_map.push( sprite );
 			}

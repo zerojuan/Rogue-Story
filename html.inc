@@ -37,8 +37,6 @@
       	float: left;
       	width: 70%;
       	height: 300px;
-      	overflow: hidden;
-				overflow-x: hidden;
       }
       
       .hudContent{
