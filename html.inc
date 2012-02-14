@@ -95,6 +95,7 @@
   </body>
   <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js'></script>
   <script src='js/lib/jaws-min.js'></script>
+  <script src='js/lib/easel.js'></script>
   <script src='js/registry.js'></script>
   <script src='js/tweet.js'></script>
   <script src='js/enemy.js'></script>
