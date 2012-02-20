@@ -114,6 +114,7 @@ function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, e
 								instance.attackPlayer(enemy, onAttackedPlayer);
 						}else{
 							console.log("I can see you");
+							//do pathfinding
 							var mod_x = 0;
 							var mod_y = 0;
 							if(player_x - enemy.x > 0){
@@ -334,11 +335,11 @@ function RogueEngine(tile_data, player_data, enemy_data, enemy_map, obj_sheet, e
 			ox = player_x;
 			oy = player_y;
 		var isVisionBlocker = instance.isVisionBlocker;
-		console.log("Player is at " + player_x + ", " + player_y);
+		//console.log("Player is at " + player_x + ", " + player_y);
 		for(ray=0;ray<view_radius;ray++){
 			var tile_x = Math.round(ox);
 			var tile_y = Math.round(oy);
-			console.log("Ray cast " + ray + ": " + tile_x + ", " + tile_y);
+			//console.log("Ray cast " + ray + ": " + tile_x + ", " + tile_y);
 			tile_data[tile_x][tile_y].visibility = constants.VISIBLE;//Set the tile to visible.
 			if(isVisionBlocker(tile_x,tile_y))
 			      return;

@@ -159,31 +159,37 @@ function Enemy(x,y,level,type,sprite_sheet){
 	};
 	
 	this.isInRange = function(player_x,player_y, isVisionBlocker){
-		if(enemy_.vision >= Enemy.NORMAL_VISION){
-			if(enemy_.x+1 == player_x && enemy_.y == player_y) return true;
-			if(enemy_.x-1 == player_x && enemy_.y == player_y) return true;
-			if(enemy_.x == player_x && enemy_.y+1 == player_y) return true;
-			if(enemy_.x == player_x && enemy_.y-1 == player_y) return true;
+		
+		for(var i=1;i<360;i++){
+		    theta_x=Math.cos(i);
+		    theta_y=Math.sin(i);
+		    if(enemy_.castRay(theta_x, theta_y, enemy_.x, enemy_.y, player_x, player_y, isVisionBlocker)){
+		    	return true;
+		    }
 		}
-		if(enemy_.vision >= Enemy.DIAGONAL_VISION){
-			//diagonal vision
-			if(enemy_.x-1 == player_x && enemy_.y-1 == player_y) return true;
-			if(enemy_.x+1 == player_x && enemy_.y-1 == player_y) return true;
-			if(enemy_.x-1 == player_x && enemy_.y+1 == player_y) return true;
-			if(enemy_.x+1 == player_x && enemy_.y+1 == player_y) return true;
-		}
-		if(enemy_.vision >= Enemy.ADVANCED_VISION){
-			//extended vision
-			if(!isVisionBlocker(enemy_.x+1,enemy_.y)) 
-				if(enemy_.x+2 == player_x && enemy_.y == player_y) return true;
-			if(!isVisionBlocker(enemy_.x-1,enemy_.y)) 
-				if(enemy_.x-2 == player_x && enemy_.y == player_y) return true;
-			if(!isVisionBlocker(enemy_.x, enemy_.y+1)) 
-				if(enemy_.x == player_x && enemy_.y+2 == player_y) return true;
-			if(!isVisionBlocker(enemy_.x, enemy_.y-1))
-				if(enemy_.x == player_x && enemy_.y-2 == player_y) return true;
-		}
+		
 		return false;
+	}
+	
+	this.castRay = function(theta_x, theta_y, x, y, player_x, player_y, isVisionBlocker){
+		var view_radius = 4;
+		var ray;
+		var ox,oy;
+			ox = x;
+			oy = y;
+		console.log("Player is at " + player_x + ", " + player_y);
+		for(ray=0;ray<view_radius;ray++){
+			var tile_x = Math.round(ox);
+			var tile_y = Math.round(oy);
+			if(isVisionBlocker(tile_x,tile_y)){
+				return false;
+			} 
+			else if(player_x == tile_x && player_y == tile_y){
+				return true; //player found!
+			}
+			ox+=theta_x;
+			oy+=theta_y;
+		}
 	}
 	
 	this.inLethalRange = function(player_x, player_y){

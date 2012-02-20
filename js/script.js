@@ -157,7 +157,9 @@ function PlayState(){
 		}
 		//enemy move
 		rogueEngine.computeEnemyMove(player_data.x, player_data.y);
+		
 		rogueEngine.updateVision(player_data.x, player_data.y);
+		
 		player.moveTo(player_data.x * tile_width, player_data.y*tile_width);
 		
 		renderMap();
